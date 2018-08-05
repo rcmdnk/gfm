@@ -30,9 +30,11 @@ GOOGLE_CLIENT_ID = '937185253369-2er0fqahlnpn7tgou1i4mi2for07mhci.'\
     'apps.googleusercontent.com'
 GOOGLE_CLIENT_SECRET = 'J2cnuhv-CS33SLnfUS-8lZfo'
 
+
 class GmailFilterManager():
 
     def __init__(self):
+        self.debug = False
         self.authentication_file = os.path.expanduser(AUTHENTICATION_FILE)
         self.google_client_id = GOOGLE_CLIENT_ID
         self.google_client_secret = GOOGLE_CLIENT_SECRET
@@ -69,7 +71,6 @@ class GmailFilterManager():
         self.dic_size_api2xml = {v: k for k, v
                                  in self.dic_size_xml2api.items()}
 
-
     def authentication(self, storage):
         return run_flow(
             OAuth2WebServerFlow(
@@ -95,7 +96,8 @@ class GmailFilterManager():
 
         prof = service.users().getProfile(userId='me').execute()
         self.address = prof['emailAddress']
-        #print("My address: %s" % self.address)
+        if self.debug:
+            print("My address: %s" % self.address)
 
         return service
 
@@ -150,7 +152,7 @@ class GmailFilterManager():
                             xml_filter[self.dic_label_api2xml[
                                 ("addLabelIds", label)]] = "true"
                             continue
-                        if not "label" in xml_filter:
+                        if "label" not in xml_filter:
                             xml_filter["label"] = []
                         xml_filter["label"].append(self.label_id2name(label))
                 elif k == "removeLabelIds":
@@ -187,9 +189,11 @@ class GmailFilterManager():
             value_out = self.dic_size_api2xml[value]
 
         if key == "query":
-            xml_key = "hasTheWord"
+            key_out = "hasTheWord"
         elif key == "query":
-            xml_key = "hasTheWord"
+            key_out = "hasTheWord"
+
+        return key_out, value_out
 
     def get_labels(self):
         if self.labels is not None:
@@ -204,17 +208,20 @@ class GmailFilterManager():
                 print(l)
             return
         print("===User labels===")
-        for l in sorted(filter(lambda x: x["type"] == "user", self.labels), key=lambda x: x["name"]):
+        for l in sorted(filter(lambda x: x["type"] == "user", self.labels),
+                        key=lambda x: x["name"]):
             print("%s: %s" % (l["name"], l["id"]))
         print("\n===System labels===")
-        for l in sorted(filter(lambda x: x["type"] != "user", self.labels), key=lambda x: x["name"]):
+        for l in sorted(filter(lambda x: x["type"] != "user", self.labels),
+                        key=lambda x: x["name"]):
             print("%s: %s" % (l["name"], l["id"]))
 
     def label_id2name(self, label_id):
         self.get_labels()
         candidates = filter(lambda x: x["id"] == label_id, self.labels)
         if len(candidates) != 1:
-            print("Wrong label id? id: %s, candidates: %s" % (label_id, str(candidates)))
+            print("Wrong label id? id: %s, candidates: %s" %
+                  (label_id, str(candidates)))
             sys.exit(1)
         return candidates[0]["name"]
 
@@ -226,11 +233,13 @@ class GmailFilterManager():
             sys.exit(1)
         return candidates[0]["id"]
 
+
 def main():
     gfm = GmailFilterManager()
-    #gfm.show_filters(raw=True)
-    #gfm.show_labels(raw=True)
+    # gfm.show_filters(raw=True)
+    # gfm.show_labels(raw=True)
     gfm.make_yaml()
+
 
 if __name__ == '__main__':
     main()
