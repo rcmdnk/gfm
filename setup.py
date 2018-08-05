@@ -145,10 +145,10 @@ setup(
     #
     # Similar to `install_requires` above, these must be valid existing
     # projects.
-    #extras_require={  # Optional
-    #    'dev': ['check-manifest'],
-    #    'test': ['coverage'],
-    #},
+    extras_require={  # Optional
+        # 'dev': ['check-manifest'],
+        # 'test': ['coverage'],
+    },
 
     # To provide executable scripts, use entry points in preference to the
     # "scripts" keyword. Entry points provide cross-platform support and allow
@@ -174,8 +174,8 @@ setup(
     # what's used to render the link text on PyPI.
     project_urls={  # Optional
         'Bug Reports': 'https://github.com/rcmdnk/gfm/issues',
-        #'Funding': 'https://donate.pypi.org',
-        #'Say Thanks!': 'http://saythanks.io/to/example',
+        # 'Funding': 'https://donate.pypi.org',
+        # 'Say Thanks!': 'http://saythanks.io/to/example',
         'Source': 'https://github.com/rcmdnk/gfm/',
     },
 )
