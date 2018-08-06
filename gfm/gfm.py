@@ -8,6 +8,7 @@ from __future__ import print_function
 
 import os
 import sys
+import copy
 import xml.etree.ElementTree as ET
 import argparse
 import xml.dom.minidom
@@ -40,6 +41,7 @@ GOOGLE_CLIENT_SECRET = 'J2cnuhv-CS33SLnfUS-8lZfo'
 class GmailFilterManager():
 
     def __init__(self, **kw):
+        self.opt = {}
         for k, v in kw.items():
             self.opt[k] = v
 
@@ -109,6 +111,8 @@ class GmailFilterManager():
                 self.put()
             elif c == "show_filters":
                 self.show_filters()
+            elif c == "show_filters_xml":
+                self.show_filters_xml()
             elif c == "show_filters_api":
                 self.show_filters_api()
             elif c == "show_labels_api":
@@ -156,7 +160,7 @@ class GmailFilterManager():
             self.service = self.build_service()
         return self.service
 
-    def dump_xml(self, stream=sys.stream):
+    def dump_xml(self, stream=sys.stdout):
         my_filter = xml.dom.minidom.parseString(
             ET.tostring(self.filters_xml)).toprettyxml(
                 indent="  ", encoding="utf-8")
@@ -173,8 +177,17 @@ class GmailFilterManager():
                       for _, x in ET.iterparse(self.opt["input_xml"],
                                                events=['start-ns'])}
 
+        for k, v in namespaces.items():
+            if k == "atom":
+                k = ""
+            ET.register_namespace(k, v)
         tree = ET.parse(self.opt["input_xml"])
         self.filters_xml = tree.getroot()
+        for e in self.filters_xml.iter('*'):
+            if e.text is not None:
+                e.text = e.text.strip()
+            if e.tail is not None:
+                e.tail = e.tail.strip()
 
         filter_list = []
         for e in self.filters_xml.findall("./atom:entry", namespaces):
@@ -191,7 +204,14 @@ class GmailFilterManager():
 
         self.filters = {"namespaces": namespaces, "filter": filter_list}
 
-    def dump_yaml(self, stream=sys.stream):
+    def show_filters_xml(self):
+        self.read_xml()
+        if self.opt["raw"]:
+            self.dump_xml()
+        else:
+            self.dump_yaml()
+
+    def dump_yaml(self, stream=sys.stdout):
         yaml = ruamel.yaml.YAML()
         yaml.indent(mapping=2, sequence=4, offset=2)
         yaml.dump(self.filters, stream=stream)
@@ -206,13 +226,13 @@ class GmailFilterManager():
             self.filters = yaml.load(f)
 
         if "namespaces" in self.filters:
-            if "atom" in self.filters["namespaces"]:
-                self.filters["namespaces"][""] -\
-                    self.filters["namespaces"]["atom"]
-                del self.filters["namespaces"]["atom"]
+            if "" in self.filters["namespaces"]:
+                self.filters["namespaces"]["atom"] =\
+                    self.filters["namespaces"][""]
+                del self.filters["namespaces"][""]
         else:
             self.filters["namespaces"] = {
-                "": "http://www.w3.org/2005/Atom",
+                "atom": "http://www.w3.org/2005/Atom",
                 "apps": "http://schemas.google.com/apps/2006"
             }
 
@@ -222,6 +242,8 @@ class GmailFilterManager():
 
     def yaml2xml(self):
         for k, v in self.filters["namespaces"].items():
+            if k == "atom":
+                k = ""
             ET.register_namespace(k, v)
 
         self.filters_xml = ET.Element('feed')
@@ -235,7 +257,7 @@ class GmailFilterManager():
             for label in labels:
                 entry = ET.SubElement(
                     self.filters_xml,
-                    "{" + self.filters["namespaces"][""] + "}" + 'entry')
+                    "{" + self.filters["namespaces"]["atom"] + "}" + 'entry')
                 properties = f
                 if label is not None:
                     properties["label"] = label
@@ -460,7 +482,13 @@ class GmailFilterManager():
         subparsers.add_parser(
             "show_filters", description=desc, help=desc,
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-            parents=[input_yaml_parser, raw_parser, debug_parser])
+            parents=[input_yaml_parser, debug_parser])
+
+        desc = "Show filters in XML"
+        subparsers.add_parser(
+            "show_filters_xml", description=desc, help=desc,
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+            parents=[input_xml_parser, raw_parser, debug_parser])
 
         desc = "Show filters taken by API"
         subparsers.add_parser(
