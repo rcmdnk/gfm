@@ -56,6 +56,7 @@ class GmailFilterManager():
         self.address = None
         self.filters = None
         self.filters_api = None
+        self.filters_xml = None
         self.labels = None
 
         self.dic_xml2api = {
@@ -97,18 +98,21 @@ class GmailFilterManager():
         for c in self.opt["command"]:
             if c == "xml2yaml":
                 self.read_xml()
-                self.write_xml()
+                self.write_yaml()
             elif c == "yaml2xml":
                 self.read_yaml()
+                self.yaml2xml()
                 self.write_xml()
             elif c == "get":
                 self.get()
             elif c == "put":
                 self.put()
-            elif c == "show_filters_api":
+            elif c == "show_filters":
                 self.show_filters()
+            elif c == "show_filters_api":
+                self.show_filters_api()
             elif c == "show_labels_api":
-                self.show_labels()
+                self.show_labels_api()
             else:
                 raise ValueError("Invalid command: %s" % c)
 
@@ -152,16 +156,28 @@ class GmailFilterManager():
             self.service = self.build_service()
         return self.service
 
+    def dump_xml(self, stream=sys.stream):
+        my_filter = xml.dom.minidom.parseString(
+            ET.tostring(self.filters_xml)).toprettyxml(
+                indent="  ", encoding="utf-8")
+        if sys.version_info.major > 2:
+            my_filter = my_filter.decode()
+        stream.write(my_filter)
+
+    def write_xml(self):
+        with open(self.opt["output_xml"], "w") as f:
+            self.dump_xml(f)
+
     def read_xml(self):
         namespaces = {str(x[0]) if x[0] != "" else "atom": x[1]
                       for _, x in ET.iterparse(self.opt["input_xml"],
                                                events=['start-ns'])}
 
         tree = ET.parse(self.opt["input_xml"])
-        root = tree.getroot()
+        self.filters_xml = tree.getroot()
 
         filter_list = []
-        for e in root.findall("./atom:entry", namespaces):
+        for e in self.filters_xml.findall("./atom:entry", namespaces):
             properties = {}
             for p in e.findall("./apps:property", namespaces):
                 name = p.get("name")
@@ -175,11 +191,14 @@ class GmailFilterManager():
 
         self.filters = {"namespaces": namespaces, "filter": filter_list}
 
-    def write_yaml(self):
+    def dump_yaml(self, stream=sys.stream):
         yaml = ruamel.yaml.YAML()
         yaml.indent(mapping=2, sequence=4, offset=2)
+        yaml.dump(self.filters, stream=stream)
+
+    def write_yaml(self):
         with open(self.opt["output_yaml"], "w") as stream:
-            yaml.dump(self.filters, stream=stream)
+            self.dump_yaml(stream)
 
     def read_yaml(self):
         yaml = ruamel.yaml.YAML()
@@ -197,11 +216,15 @@ class GmailFilterManager():
                 "apps": "http://schemas.google.com/apps/2006"
             }
 
-    def write_xml(self):
+    def show_filters(self):
+        self.read_yaml()
+        self.dump_yaml()
+
+    def yaml2xml(self):
         for k, v in self.filters["namespaces"].items():
             ET.register_namespace(k, v)
 
-        root = ET.Element('feed')
+        self.filters_xml = ET.Element('feed')
         for f in self.filters["filters"]:
             if "label" in f:
                 labels = f["label"] if isinstance(
@@ -211,7 +234,8 @@ class GmailFilterManager():
                 labels = [None]
             for label in labels:
                 entry = ET.SubElement(
-                    root, "{" + self.filters["namespaces"][""] + "}" + 'entry')
+                    self.filters_xml,
+                    "{" + self.filters["namespaces"][""] + "}" + 'entry')
                 properties = f
                 if label is not None:
                     properties["label"] = label
@@ -222,21 +246,13 @@ class GmailFilterManager():
                         attrib={"name": k, "value": v}
                     )
 
-        my_filter = xml.dom.minidom.parseString(ET.tostring(root)).toprettyxml(
-            indent="  ", encoding="utf-8")
-        if sys.version_info.major > 2:
-            my_filter = my_filter.decode()
-
-        with open(self.opt["output_xml"], "w") as f:
-            f.write(my_filter)
-
     def get_filters(self):
         if self.filters_api is not None:
             return
         self.filters_api = self.get_service().users().settings(
         ).filters().list(userId='me').execute()
 
-    def show_filters(self):
+    def show_filters_api(self):
         self.get_filters()
         if self.opt["raw"]:
             print(self.filters_api)
@@ -252,7 +268,7 @@ class GmailFilterManager():
 
     def get(self):
         self.get_filters()
-        data = {
+        self.filters = {
             "filter": [],
             "namespaces": {
                 "apps": "http://schemas.google.com/apps/2006",
@@ -260,7 +276,7 @@ class GmailFilterManager():
             }
         }
 
-        for f in self.filters["filter"]:
+        for f in self.filters_api["filter"]:
             xml_filter = {}
             for k, v in f["criteria"].items():
                 key, value = self.criteria_api2xml(k, v)
@@ -287,11 +303,9 @@ class GmailFilterManager():
                 else:
                     xml_filter[k] = v
 
-            data["filter"].append(xml_filter)
+            self.filters["filter"].append(xml_filter)
 
-        with open(self.opt["output_yaml"], "w") as stream:
-            yaml = ruamel.yaml.YAML()
-            yaml.dump(data, stream=stream)
+        self.write_yaml()
 
     def criteria_api2xml(self, key, value):
         key_out = key
@@ -323,7 +337,7 @@ class GmailFilterManager():
         self.labels = self.get_service().users().labels().list(
             userId='me').execute()["labels"]
 
-    def show_labels(self):
+    def show_labels_api(self):
         self.get_labels()
         if self.opt["raw"]:
             for l in self.labels:
@@ -441,6 +455,12 @@ class GmailFilterManager():
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
             parents=[input_yaml_parser, auth_file_parser,
                      client_id_parser, client_secret_parser, debug_parser])
+
+        desc = "Show filters in YAML"
+        subparsers.add_parser(
+            "show_filters", description=desc, help=desc,
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+            parents=[input_yaml_parser, raw_parser, debug_parser])
 
         desc = "Show filters taken by API"
         subparsers.add_parser(
