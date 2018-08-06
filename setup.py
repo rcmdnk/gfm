@@ -136,10 +136,11 @@ setup(
     # For an analysis of "install_requires" vs pip's requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
-        "yaml",
+        "google-api-python-client",
         "httplib2",
         "oauth2client",
-        "google-api-python-client",
+        "ruamel.yaml",
+        "yaml",
     ],  # Optional
 
     # List additional groups of dependencies here (e.g. development
