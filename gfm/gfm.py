@@ -8,7 +8,6 @@ from __future__ import print_function
 
 import os
 import sys
-import copy
 import xml.etree.ElementTree as ET
 import argparse
 import xml.dom.minidom
