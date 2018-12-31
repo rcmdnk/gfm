@@ -140,7 +140,6 @@ setup(
         "httplib2",
         "oauth2client",
         "ruamel.yaml",
-        "yaml",
     ],  # Optional
 
     # List additional groups of dependencies here (e.g. development

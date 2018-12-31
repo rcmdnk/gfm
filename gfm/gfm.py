@@ -452,16 +452,24 @@ class GmailFilterManager():
             title="subcommands", metavar="[command]", help="", dest="command")
 
         desc = "Convert filters from XML to YAML"
-        subparsers.add_parser(
-            "xml2yaml", description=desc, help=desc,
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-            parents=[input_xml_parser, output_yaml_parser, debug_parser])
+        kwargs = {
+            "description": desc, "help": desc,
+            "formatter_class": argparse.ArgumentDefaultsHelpFormatter,
+            "parents": [input_xml_parser, output_yaml_parser, debug_parser]
+        }
+        if sys.version_info.major > 2:
+            kwargs["aliases"] = ["x2y"]
+        subparsers.add_parser("xml2yaml", **kwargs)
 
         desc = "Convert filters from YAML to XML"
-        subparsers.add_parser(
-            "yaml2xml", description=desc, help=desc,
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-            parents=[input_yaml_parser, output_xml_parser, debug_parser])
+        kwargs = {
+            "description": desc, "help": desc,
+            "formatter_class": argparse.ArgumentDefaultsHelpFormatter,
+            "parents": [input_yaml_parser, output_xml_parser, debug_parser]
+        }
+        if sys.version_info.major > 2:
+            kwargs["aliases"] = ["y2x"]
+        subparsers.add_parser("yaml2xml", **kwargs)
 
         desc = "Get filters by using API and make YAML"
         subparsers.add_parser(
@@ -478,30 +486,46 @@ class GmailFilterManager():
                      client_id_parser, client_secret_parser, debug_parser])
 
         desc = "Show filters in YAML"
-        subparsers.add_parser(
-            "show_filters", description=desc, help=desc,
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-            parents=[input_yaml_parser, debug_parser])
+        kwargs = {
+            "description": desc, "help": desc,
+            "formatter_class": argparse.ArgumentDefaultsHelpFormatter,
+            "parents": [input_yaml_parser, debug_parser],
+        }
+        if sys.version_info.major > 2:
+            kwargs["aliases"] = ["show", "s"]
+        subparsers.add_parser("show_filters", **kwargs)
 
         desc = "Show filters in XML"
-        subparsers.add_parser(
-            "show_filters_xml", description=desc, help=desc,
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-            parents=[input_xml_parser, raw_parser, debug_parser])
+        kwargs = {
+            "description": desc, "help": desc,
+            "formatter_class": argparse.ArgumentDefaultsHelpFormatter,
+            "parents": [input_xml_parser, raw_parser, debug_parser],
+        }
+        if sys.version_info.major > 2:
+            kwargs["aliases"] = ["show_xml", "sx"]
+        subparsers.add_parser("show_filter_xml", **kwargs)
 
         desc = "Show filters taken by API"
-        subparsers.add_parser(
-            "show_filters_api", description=desc, help=desc,
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-            parents=[auth_file_parser, client_id_parser, client_secret_parser,
-                     raw_parser, debug_parser])
+        kwargs = {
+            "description": desc, "help": desc,
+            "formatter_class": argparse.ArgumentDefaultsHelpFormatter,
+            "parents": [auth_file_parser, client_id_parser,
+                        client_secret_parser, raw_parser, debug_parser],
+        }
+        if sys.version_info.major > 2:
+            kwargs["aliases"] = ["show_api", "sa"]
+        subparsers.add_parser("show_filterapi", **kwargs)
 
         desc = "Show labels taken by API"
-        subparsers.add_parser(
-            "show_labels_api", description=desc, help=desc,
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-            parents=[auth_file_parser, client_id_parser, client_secret_parser,
-                     raw_parser, debug_parser])
+        kwargs = {
+            "description": desc, "help": desc,
+            "formatter_class": argparse.ArgumentDefaultsHelpFormatter,
+            "parents": [auth_file_parser, client_id_parser,
+                        client_secret_parser, raw_parser, debug_parser],
+        }
+        if sys.version_info.major > 2:
+            kwargs["aliases"] = ["show_labels", "sl"]
+        subparsers.add_parser("show_labels_api", **kwargs)
 
         return parser
 

@@ -1,0 +1,25 @@
+filters:
+  - excludeChats: "true"
+    from: "foo@example.com"
+    shouldTrash: "true"
+    hasAttachment: "true"
+    doesNotHaveTheWord: "this word must not be include"
+    label: "MyLabel1"
+    to: "bar@exmaple.com"
+    shouldAlwaysMarkAsImportant: "true"
+    shouldNeverSpam: "true"
+    shouldMarkAsRead: "true"
+    shouldStar: "true"
+    subject: "my subject てすと"
+    forwardTo: "baz@gmail.com"
+    smartLabelToApply: "^smartlabel_group"
+    hasTheWord: "this word must be included"
+  - from: "aa"
+    shouldNeverMarkAsImportant: "true"
+    sizeUnit: "s_smb"
+    smartLabelToApply: "^smartlabel_personal"
+    size: "33"
+    sizeOperator: "s_sl"
+namespaces:
+  apps: http://schemas.google.com/apps/2006
+  atom: http://www.w3.org/2005/Atom
