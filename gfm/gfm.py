@@ -87,37 +87,38 @@ class GmailFilterManager():
         self.dic_size_api2xml = {v: k for k, v
                                  in self.dic_size_xml2api.items()}
 
-        if ((type(self.opt["command"]) == str and self.opt["command"] == "") or
-                (type(self.opt["command"]) == str and
-                 len(self.opt["command"]) == 0) or
-                (self.opt["command"] is None)):
+        if ((isinstance(self.opt["command"], str)
+             and self.opt["command"] == "")
+                or (isinstance(self.opt["command"], str)
+                    and not self.opt["command"])
+                or (self.opt["command"] is None)):
             return
 
-        if type(self.opt["command"]) == str:
+        if isinstance(self.opt["command"], str):
             self.opt["command"] = [self.opt["command"]]
 
-        for c in self.opt["command"]:
-            if c == "xml2yaml":
+        for command in self.opt["command"]:
+            if command == "xml2yaml":
                 self.read_xml()
                 self.write_yaml()
-            elif c == "yaml2xml":
+            elif command == "yaml2xml":
                 self.read_yaml()
                 self.yaml2xml()
                 self.write_xml()
-            elif c == "get":
+            elif command == "get":
                 self.get()
-            elif c == "put":
+            elif command == "put":
                 self.put()
-            elif c == "show_filters":
+            elif command == "show_filters":
                 self.show_filters()
-            elif c == "show_filters_xml":
+            elif command == "show_filters_xml":
                 self.show_filters_xml()
-            elif c == "show_filters_api":
+            elif command == "show_filters_api":
                 self.show_filters_api()
-            elif c == "show_labels_api":
+            elif command == "show_labels_api":
                 self.show_labels_api()
             else:
-                raise ValueError("Invalid command: %s" % c)
+                raise ValueError("Invalid command: %s" % command)
 
     def clean(self):
         self.filters = None
